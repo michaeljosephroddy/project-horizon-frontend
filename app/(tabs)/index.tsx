@@ -1,75 +1,214 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
+import { useRouter } from "expo-router";
+import React, { useContext, useEffect, useMemo, useState } from "react";
+import {
+  ActivityIndicator,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import apiClient from "../../src/api/apiClient";
+import { AuthContext } from "../../src/context/AuthContext";
 
-import { HelloWave } from '@/components/HelloWave';
-import ParallaxScrollView from '@/components/ParallaxScrollView';
-import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
+type JournalEntry = {
+  journalEntryId: number;
+  overallRating: number; // 1..10
+  timestamp: string; // ISO
+};
 
-export default function HomeScreen() {
+function ratingToEmoji(avg: number | null) {
+  if (avg == null) return "–";
+  if (avg >= 8.5) return "😄";
+  if (avg >= 7) return "😊";
+  if (avg >= 5.5) return "🙂";
+  if (avg >= 4) return "😕";
+  return "☹️";
+}
+
+function formatAvg(avg: number | null) {
+  return avg == null ? "–" : `${avg.toFixed(1)}/10`;
+}
+
+function computeCurrentStreakDays(datesIso: string[]) {
+  if (datesIso.length === 0) return 0;
+  const set = new Set(datesIso.map((d) => d.split("T")[0]));
+  // Start from the latest date we have
+  const latest = datesIso
+    .map((d) => new Date(d))
+    .sort((a, b) => b.getTime() - a.getTime())[0];
+  let streak = 0;
+  const cursor = new Date(latest);
+  while (true) {
+    const key = cursor.toISOString().split("T")[0];
+    if (set.has(key)) {
+      streak += 1;
+      cursor.setDate(cursor.getDate() - 1);
+    } else {
+      break;
+    }
+  }
+  return streak;
+}
+
+export default function Dashboard() {
+  const router = useRouter();
+  const { user } = useContext(AuthContext);
+  const userId = user?.id ?? 1;
+
+  const [loading, setLoading] = useState<boolean>(true);
+  const [entries, setEntries] = useState<JournalEntry[]>([]);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function load() {
+      setLoading(true);
+      setError(null);
+      try {
+        const res = await apiClient.get(
+          `/journal/users/${userId}/journal-entries`
+        );
+        if (!cancelled) setEntries(res.data || []);
+      } catch (e) {
+        if (!cancelled) setError("Failed to load stats");
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, [userId]);
+
+  const entriesCount = entries.length;
+  const averageRating: number | null = useMemo(() => {
+    if (entries.length === 0) return null;
+    const sum = entries.reduce(
+      (acc, e) => acc + Number(e.overallRating || 0),
+      0
+    );
+    return sum / entries.length;
+  }, [entries]);
+  const avgEmoji = ratingToEmoji(averageRating);
+  const avgLabel = formatAvg(averageRating);
+  const streakDays = useMemo(
+    () => computeCurrentStreakDays(entries.map((e) => e.timestamp)),
+    [entries]
+  );
+
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12',
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+    <ScrollView contentContainerStyle={styles.container}>
+      <Text style={styles.title}>Mood Tracker Dashboard</Text>
+
+      {loading ? (
+        <View style={{ alignItems: "center", paddingVertical: 24 }}>
+          <ActivityIndicator size="large" />
+          <Text style={{ marginTop: 8 }}>Loading…</Text>
+        </View>
+      ) : (
+        <>
+          {/* Stats Section */}
+          <View style={styles.statsContainer}>
+            <View style={styles.statCard}>
+              <Text style={styles.statValue}>{entriesCount}</Text>
+              <Text style={styles.statLabel}>Journal Entries</Text>
+            </View>
+            <View style={styles.statCard}>
+              <Text style={styles.statValue}>{avgEmoji}</Text>
+              <Text style={styles.statLabel}>Average Mood ({avgLabel})</Text>
+            </View>
+            <View style={styles.statCard}>
+              <Text style={styles.statValue}>{streakDays}🔥</Text>
+              <Text style={styles.statLabel}>Day Streak</Text>
+            </View>
+          </View>
+          {error && (
+            <Text style={{ color: "#b91c1c", marginBottom: 8 }}>{error}</Text>
+          )}
+        </>
+      )}
+
+      {/* Navigation Buttons */}
+      <TouchableOpacity
+        style={styles.button}
+        onPress={() => router.push("/(tabs)/journal/newJournalEntry")}
+      >
+        <Text style={styles.buttonText}>➕ Add Mood Entry</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        style={styles.button}
+        onPress={() => router.push("/(tabs)/journal")}
+      >
+        <Text style={styles.buttonText}>📖 View Journal</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        style={styles.button}
+        onPress={() => router.push("/(tabs)/analytics")}
+      >
+        <Text style={styles.buttonText}>📊 View Analytics</Text>
+      </TouchableOpacity>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
+  container: {
+    flexGrow: 1,
+    padding: 20,
+    backgroundColor: "#f4f6f8",
+    alignItems: "center",
   },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
+  title: {
+    fontSize: 26,
+    fontWeight: "bold",
+    marginBottom: 20,
+    color: "#333",
   },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
+  statsContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    width: "100%",
+    marginBottom: 20,
+  },
+  statCard: {
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    padding: 15,
+    flex: 1,
+    alignItems: "center",
+    marginHorizontal: 5,
+    shadowColor: "#000",
+    shadowOpacity: 0.1,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 6,
+    elevation: 3,
+  },
+  statValue: {
+    fontSize: 22,
+    fontWeight: "bold",
+    color: "#4cafef",
+  },
+  statLabel: {
+    fontSize: 14,
+    color: "#777",
+    marginTop: 5,
+  },
+  button: {
+    backgroundColor: "#4cafef",
+    borderRadius: 8,
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    marginVertical: 8,
+    width: "100%",
+    alignItems: "center",
+  },
+  buttonText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "bold",
   },
 });
