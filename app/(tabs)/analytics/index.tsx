@@ -15,33 +15,41 @@ import PatternDetectionView, {
 import PeriodComparisonView, {
   PeriodComparisonResponse,
 } from "./PeriodComparisonView";
-import ReportView from "./ReportView";
 import TrendAnalysisView, { TrendAnalysisResponse } from "./TrendAnalysisView";
 
 // Utility functions for date ranges
-function getLast4WeeksRange() {
+function getDateRange(weeks: number) {
   const endDate = new Date();
   const startDate = new Date();
-  startDate.setDate(endDate.getDate() - 28);
+  startDate.setDate(endDate.getDate() - weeks * 7);
   return {
     startDate: startDate.toISOString().split("T")[0],
     endDate: endDate.toISOString().split("T")[0],
   };
 }
 
-function getPeriodComparisonRanges() {
-  const today = new Date();
+function getLast4WeeksRange() {
+  return getDateRange(4);
+}
 
-  // Period 2 → last 4 weeks
+function getLast2WeeksRange() {
+  return getDateRange(2);
+}
+
+function getPeriodComparisonRanges(weeks: number) {
+  const today = new Date();
+  const daysInPeriod = weeks * 7;
+
+  // Period 2 → last N weeks
   const endPeriod2 = today;
   const startPeriod2 = new Date();
-  startPeriod2.setDate(endPeriod2.getDate() - 28);
+  startPeriod2.setDate(endPeriod2.getDate() - daysInPeriod);
 
-  // Period 1 → 4 weeks before period 2
+  // Period 1 → N weeks before period 2
   const endPeriod1 = new Date(startPeriod2);
   endPeriod1.setDate(startPeriod2.getDate() - 1);
   const startPeriod1 = new Date(endPeriod1);
-  startPeriod1.setDate(endPeriod1.getDate() - 27);
+  startPeriod1.setDate(endPeriod1.getDate() - (daysInPeriod - 1));
 
   return {
     period1: {
@@ -55,47 +63,6 @@ function getPeriodComparisonRanges() {
   };
 }
 
-// Format the plain text report into styled sections
-function formatReport(report: string) {
-  const lines = report.split("\n");
-  return lines.map((line, idx) => {
-    // Headings
-    if (line.startsWith("==")) {
-      return (
-        <Text key={idx} style={styles.sectionHeader}>
-          {line.replace(/==/g, "").trim()}
-        </Text>
-      );
-    }
-    // Title line
-    if (line.startsWith("Mood Analytics Report")) {
-      return (
-        <Text key={idx} style={styles.reportTitle}>
-          {line}
-        </Text>
-      );
-    }
-    // Bullet points
-    if (line.startsWith("•") || line.startsWith("-")) {
-      return (
-        <Text key={idx} style={styles.bullet}>
-          {line}
-        </Text>
-      );
-    }
-    // Blank line
-    if (line.trim() === "") {
-      return <View key={idx} style={{ height: 8 }} />;
-    }
-    // Default line
-    return (
-      <Text key={idx} style={styles.normalText}>
-        {line}
-      </Text>
-    );
-  });
-}
-
 export default function AnalyticsScreen() {
   const [result, setResult] = useState<any>(null);
   const [loading, setLoading] = useState<boolean>(false);
@@ -106,6 +73,7 @@ export default function AnalyticsScreen() {
     useState<PatternDetectionResponse | null>(null);
   const [comparisonData, setComparisonData] =
     useState<PeriodComparisonResponse | null>(null);
+  const [currentPeriod, setCurrentPeriod] = useState<number>(4); // Track current period (2 or 4 weeks)
   const { user } = useContext(AuthContext);
 
   const userId = user?.id ?? 1;
@@ -115,109 +83,89 @@ export default function AnalyticsScreen() {
     getLast4WeeksRange()
   );
   const [{ period1, period2 }, setCompareRanges] = useState(
-    getPeriodComparisonRanges()
+    getPeriodComparisonRanges(4)
   );
 
-  // Load analytics on mount
-  React.useEffect(() => {
-    const { startDate, endDate } = getLast4WeeksRange();
-    const { period1, period2 } = getPeriodComparisonRanges();
-    // also store
-    setTrendRange({ startDate, endDate });
-    setCompareRanges({ period1, period2 });
-    let cancelled = false;
-    async function loadAll() {
-      setLoading(true);
-      try {
-        const [trendRes, patternRes, compareRes] = await Promise.all([
-          apiClient.get(`/analytics/users/${userId}/trend-analysis`, {
-            params: { startDate, endDate },
-          }),
-          apiClient.get(`/analytics/users/${userId}/pattern-detection`, {
-            params: { startDate, endDate },
-          }),
-          apiClient.get(`/analytics/users/${userId}/period-comparison`, {
-            params: {
-              period1Start: period1.start,
-              period1End: period1.end,
-              period2Start: period2.start,
-              period2End: period2.end,
-            },
-          }),
-        ]);
-        if (cancelled) return;
-        setTrendData(trendRes.data as TrendAnalysisResponse);
-        setPatternData(patternRes.data as PatternDetectionResponse);
-        setComparisonData(compareRes.data as PeriodComparisonResponse);
-      } catch (err) {
-        if (!cancelled) {
-          // Keep minimal error surface; sections render will handle nulls
-        }
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    }
-    loadAll();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  // Load analytics function
+  const loadAnalytics = async (weeks: number) => {
+    const dateRange = getDateRange(weeks);
+    const periodRanges = getPeriodComparisonRanges(weeks);
 
-  async function fetchReport() {
-    const { startDate, endDate } = getLast4WeeksRange();
-    const { period1, period2 } = getPeriodComparisonRanges();
+    // Update state with new ranges
+    setTrendRange(dateRange);
+    setCompareRanges(periodRanges);
+    setCurrentPeriod(weeks);
+
     setLoading(true);
     try {
-      const [reportRes, trendRes, patternRes, compareRes] = await Promise.all([
-        apiClient.get(`/analytics/users/${userId}/generate-report`, {
+      const [trendRes, patternRes, compareRes] = await Promise.all([
+        apiClient.get(`/analytics/users/${userId}/trend-analysis`, {
           params: {
-            startDate,
-            endDate,
-            period1Start: period1.start,
-            period1End: period1.end,
-            period2Start: period2.start,
-            period2End: period2.end,
+            startDate: dateRange.startDate,
+            endDate: dateRange.endDate,
           },
         }),
-        apiClient.get(`/analytics/users/${userId}/trend-analysis`, {
-          params: { startDate, endDate },
-        }),
         apiClient.get(`/analytics/users/${userId}/pattern-detection`, {
-          params: { startDate, endDate },
+          params: {
+            startDate: dateRange.startDate,
+            endDate: dateRange.endDate,
+          },
         }),
         apiClient.get(`/analytics/users/${userId}/period-comparison`, {
           params: {
-            period1Start: period1.start,
-            period1End: period1.end,
-            period2Start: period2.start,
-            period2End: period2.end,
+            period1Start: periodRanges.period1.start,
+            period1End: periodRanges.period1.end,
+            period2Start: periodRanges.period2.start,
+            period2End: periodRanges.period2.end,
           },
         }),
       ]);
-      setResult({
-        reportText: reportRes.data,
-        trend: trendRes.data,
-        pattern: patternRes.data,
-        comparison: compareRes.data,
-        _type: "report",
-      });
+
+      setTrendData(trendRes.data as TrendAnalysisResponse);
+      setPatternData(patternRes.data as PatternDetectionResponse);
+      setComparisonData(compareRes.data as PeriodComparisonResponse);
+      // Clear previous report when loading new analytics
+      setResult(null);
     } catch (err) {
-      setResult({ error: "Failed to generate report" });
+      // Keep minimal error surface; sections render will handle nulls
     } finally {
       setLoading(false);
     }
-  }
+  };
+
+  // Load analytics on mount (default to 4 weeks)
+  React.useEffect(() => {
+    loadAnalytics(4);
+  }, []);
 
   return (
     <ScrollView style={styles.container}>
       <Text style={styles.header}>Analytics</Text>
 
-      {/* Auto-loaded sections below; keep Generate Report as manual */}
-      <Button
-        title="📝 Generate Report"
-        onPress={fetchReport}
-        disabled={loading}
-      />
+      {/* Time period selection buttons */}
+      <View style={styles.buttonContainer}>
+        <View style={styles.buttonWrapper}>
+          <Button
+            title="📊 Last 2 Weeks"
+            onPress={() => loadAnalytics(2)}
+            disabled={loading}
+            color={currentPeriod === 2 ? "#007AFF" : "#8E8E93"}
+          />
+        </View>
+        <View style={styles.buttonWrapper}>
+          <Button
+            title="📈 Last 4 Weeks"
+            onPress={() => loadAnalytics(4)}
+            disabled={loading}
+            color={currentPeriod === 4 ? "#007AFF" : "#8E8E93"}
+          />
+        </View>
+      </View>
+
+      {/* Generate Report button */}
+      <View style={styles.reportButtonContainer}>
+        <Button title="📝 Generate Report" disabled={loading} />
+      </View>
 
       <View style={{ height: 12 }} />
       {loading ? (
@@ -227,7 +175,9 @@ export default function AnalyticsScreen() {
         </View>
       ) : (
         <>
-          <Text style={styles.resultHeader}>Trend Analysis</Text>
+          <Text style={styles.resultHeader}>
+            Trend Analysis ({currentPeriod} weeks)
+          </Text>
           {trendData ? (
             <View style={{ marginTop: 12 }}>
               <TrendAnalysisView data={trendData} />
@@ -236,7 +186,9 @@ export default function AnalyticsScreen() {
             <Text>Unable to load trend analysis.</Text>
           )}
 
-          <Text style={styles.resultHeader}>Pattern Detection</Text>
+          <Text style={styles.resultHeader}>
+            Pattern Detection ({currentPeriod} weeks)
+          </Text>
           {patternData ? (
             <View style={{ marginTop: 12 }}>
               <PatternDetectionView
@@ -249,7 +201,9 @@ export default function AnalyticsScreen() {
             <Text>Unable to load pattern detection.</Text>
           )}
 
-          <Text style={styles.resultHeader}>Period Comparison</Text>
+          <Text style={styles.resultHeader}>
+            Period Comparison ({currentPeriod} weeks)
+          </Text>
           {comparisonData ? (
             <View style={{ marginTop: 12 }}>
               <PeriodComparisonView
@@ -263,18 +217,6 @@ export default function AnalyticsScreen() {
           ) : (
             <Text>Unable to load period comparison.</Text>
           )}
-
-          {/* Render consolidated report if generated below */}
-          {result && (result as any)._type === "report" && (
-            <View style={{ marginTop: 12 }}>
-              <ReportView
-                reportText={(result as any).reportText}
-                trend={(result as any).trend}
-                pattern={(result as any).pattern}
-                comparison={(result as any).comparison}
-              />
-            </View>
-          )}
         </>
       )}
     </ScrollView>
@@ -284,6 +226,18 @@ export default function AnalyticsScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 12 },
   header: { fontSize: 22, fontWeight: "700", marginBottom: 12 },
+  buttonContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 12,
+  },
+  buttonWrapper: {
+    flex: 1,
+    marginHorizontal: 4,
+  },
+  reportButtonContainer: {
+    marginBottom: 12,
+  },
   resultHeader: { fontWeight: "600", marginTop: 12 },
   reportTitle: { fontSize: 18, fontWeight: "700", marginBottom: 8 },
   sectionHeader: {

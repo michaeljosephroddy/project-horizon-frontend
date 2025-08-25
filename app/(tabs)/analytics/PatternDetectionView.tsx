@@ -1,5 +1,11 @@
 import React from "react";
-import { ScrollView, StyleSheet, Text, View } from "react-native";
+import {
+  ScrollView,
+  StyleSheet,
+  Text,
+  useWindowDimensions,
+  View,
+} from "react-native";
 import { BarChart } from "react-native-gifted-charts";
 import { MOOD_COLORS } from "../../../constants/MoodColors";
 
@@ -94,6 +100,11 @@ export default function PatternDetectionView({
   startDate?: string;
   endDate?: string;
 }) {
+  const { width: screenWidth } = useWindowDimensions();
+  const chartWidth = Math.max(screenWidth - 32, 280); // 32 for padding, min width fallback
+
+  // ...existing code...
+
   const barData = Object.entries(data.summary.moodFrequencies).map(
     ([mood, percentage]) => ({
       value: Number(percentage),
@@ -101,6 +112,9 @@ export default function PatternDetectionView({
       frontColor: MOOD_COLORS[mood as Mood],
     })
   );
+
+  const numPoints = barData.length;
+  const spacing = numPoints > 1 ? chartWidth / (numPoints - 1) : chartWidth / 2;
 
   const insights = generatePatternInsights(data);
 
@@ -127,7 +141,7 @@ export default function PatternDetectionView({
           <Text style={styles.kpiValue}>
             {data.summary.averageIntensity.toFixed(1)}
           </Text>
-          <Text style={styles.kpiLabel}>Avg Intensity</Text>
+          <Text style={styles.kpiLabel}>Avg Rating</Text>
         </View>
         <View style={styles.kpiCard}>
           <Text style={styles.kpiValue}>{data.patterns.moodStability}</Text>
@@ -146,7 +160,9 @@ export default function PatternDetectionView({
           noOfSections={5}
           maxValue={Math.max(...barData.map((d) => d.value)) + 5}
           barWidth={32}
-          spacing={24}
+          spacing={spacing}
+          width={chartWidth}
+          initialSpacing={10}
         />
       </View>
 

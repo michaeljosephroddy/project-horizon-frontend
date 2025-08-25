@@ -1,5 +1,11 @@
 import React from "react";
-import { ScrollView, StyleSheet, Text, View } from "react-native";
+import {
+  ScrollView,
+  StyleSheet,
+  Text,
+  useWindowDimensions,
+  View,
+} from "react-native";
 import { LineChart } from "react-native-gifted-charts";
 import { MOOD_COLORS } from "../../../constants/MoodColors";
 
@@ -89,9 +95,18 @@ export default function TrendAnalysisView({
 }: {
   data: TrendAnalysisResponse;
 }) {
+  const { width: screenWidth } = useWindowDimensions();
+  const chartWidth = Math.max(screenWidth - 32, 280); // 32 for padding, min width fallback
+
+  // ...existing code...
+
   const trendOrdered = [...data.trend].sort(
     (a, b) => new Date(a.weekStart).getTime() - new Date(b.weekStart).getTime()
   );
+
+  const numPoints = trendOrdered.length;
+  const spacing =
+    numPoints > 1 ? (chartWidth - 40) / (numPoints - 1) : chartWidth / 2;
 
   const lineData = trendOrdered.map((w) => ({
     value: Number(w.averageRating?.toFixed?.(2) ?? w.averageRating),
@@ -148,12 +163,13 @@ export default function TrendAnalysisView({
           startFillColor="rgba(74,144,226,0.25)"
           endFillColor="rgba(74,144,226,0.05)"
           curved
-          spacing={36}
+          spacing={spacing} // <-- responsive spacing
           yAxisTextStyle={styles.axisText}
           xAxisLabelTextStyle={styles.axisText}
           noOfSections={5}
           yAxisLabelTexts={["0", "2", "4", "6", "8", "10"]}
           maxValue={10}
+          width={chartWidth}
         />
       </View>
 
@@ -170,12 +186,14 @@ export default function TrendAnalysisView({
               dataPointsRadius={3}
               thickness={2}
               curved
+              spacing={spacing} // <-- now fills chart width
               noOfSections={5}
               maxValue={Math.max(5, Number(maxFreq))}
               yAxisLabelTexts={yAxisLabels}
               yAxisTextStyle={styles.axisText}
               xAxisLabelTextStyle={styles.axisText}
               hideRules
+              width={chartWidth}
             />
             <View style={styles.legendRow}>
               {allMoods.map((mood) => (

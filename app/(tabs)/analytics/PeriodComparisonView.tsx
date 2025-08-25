@@ -1,5 +1,11 @@
 import React from "react";
-import { ScrollView, StyleSheet, Text, View } from "react-native";
+import {
+  ScrollView,
+  StyleSheet,
+  Text,
+  useWindowDimensions,
+  View,
+} from "react-native";
 import { BarChart } from "react-native-gifted-charts";
 import { MOOD_COLORS } from "../../../constants/MoodColors";
 
@@ -34,7 +40,7 @@ function generateComparisonInsights(data: PeriodComparisonResponse): string[] {
       const direction = intensityDiff > 0 ? "improved" : "declined";
       const magnitude = Math.abs(intensityDiff);
       insights.push(
-        `Your overall mood intensity ${direction} by ${magnitude.toFixed(
+        `Your overall mood rating ${direction} by ${magnitude.toFixed(
           1
         )} points.`
       );
@@ -99,6 +105,61 @@ function generateComparisonInsights(data: PeriodComparisonResponse): string[] {
   return insights.slice(0, 4); // Limit to 4 insights
 }
 
+// Calculate barWidth and spacing so all bars fit nicely
+function getBarChartLayout(
+  chartWidth: number,
+  numBars: number,
+  initialSpacing: number = 10
+) {
+  // More responsive breakpoints
+  const isMobile = chartWidth < 400;
+  const isTablet = chartWidth >= 400 && chartWidth < 768;
+
+  // Dynamic sizing based on device type and number of bars
+  let minBarWidth, maxBarWidth, minSpacing;
+
+  if (isMobile) {
+    // For mobile, prioritize fitting all bars
+    minBarWidth = Math.max(6, Math.floor(chartWidth / (numBars * 2))); // Ensure minimum visibility
+    maxBarWidth = Math.min(25, Math.floor((chartWidth / numBars) * 0.7)); // Max 70% of available space per bar
+    minSpacing = 1;
+  } else if (isTablet) {
+    minBarWidth = 12;
+    maxBarWidth = 35;
+    minSpacing = 3;
+  } else {
+    minBarWidth = 15;
+    maxBarWidth = 45;
+    minSpacing = 5;
+  }
+
+  const availableWidth = chartWidth - initialSpacing * 2; // Account for both sides
+  let barWidth = minBarWidth;
+  let spacing = minSpacing;
+
+  if (numBars > 0) {
+    // Calculate optimal bar width that fits all bars
+    const totalSpacingWidth = minSpacing * (numBars - 1);
+    const availableBarWidth = availableWidth - totalSpacingWidth;
+
+    barWidth = Math.floor(availableBarWidth / numBars);
+    barWidth = Math.max(minBarWidth, Math.min(barWidth, maxBarWidth));
+
+    // Recalculate spacing with final bar width
+    const totalBarsWidth = barWidth * numBars;
+    const remainingWidth = availableWidth - totalBarsWidth;
+
+    if (numBars > 1) {
+      spacing = Math.max(
+        minSpacing,
+        Math.floor(remainingWidth / (numBars - 1))
+      );
+    }
+  }
+
+  return { barWidth, spacing, initialSpacing };
+}
+
 export default function PeriodComparisonView({
   data,
   period1Start,
@@ -112,6 +173,9 @@ export default function PeriodComparisonView({
   period2Start?: string;
   period2End?: string;
 }) {
+  const { width: screenWidth } = useWindowDimensions();
+  const chartWidth = Math.max(screenWidth - 32, 280); // 32 for padding, min width fallback
+
   const period1Data = Object.entries(data.period1Stats.moodFrequencies).map(
     ([mood, percentage]) => ({
       value: Number(percentage * 100), // Convert to percentage
@@ -127,6 +191,26 @@ export default function PeriodComparisonView({
       frontColor: MOOD_COLORS[mood as Mood],
     })
   );
+
+  // period 1 spacing
+  const numPointsPeriod1 = period1Data.length;
+  // period 2 spacing
+  const numPointsPeriod2 = period2Data.length;
+
+  const {
+    barWidth: barWidth1,
+    spacing: spacingPeriod1,
+    initialSpacing: initialSpacing1,
+  } = getBarChartLayout(
+    chartWidth,
+    numPointsPeriod1,
+    10 // or any small value you want for initial gap
+  );
+  const {
+    barWidth: barWidth2,
+    spacing: spacingPeriod2,
+    initialSpacing: initialSpacing2,
+  } = getBarChartLayout(chartWidth, numPointsPeriod2, 10);
 
   const insights = generateComparisonInsights(data);
 
@@ -157,7 +241,7 @@ export default function PeriodComparisonView({
           <Text style={styles.kpiValue}>
             {data.period1Stats.averageIntensity.toFixed(1)}
           </Text>
-          <Text style={styles.kpiLabel}>Avg Intensity</Text>
+          <Text style={styles.kpiLabel}>Avg Rating</Text>
         </View>
       </View>
 
@@ -172,8 +256,10 @@ export default function PeriodComparisonView({
             yAxisTextStyle={styles.axisText}
             noOfSections={5}
             maxValue={Math.max(...period1Data.map((d) => d.value)) + 5}
-            barWidth={24}
-            spacing={16}
+            barWidth={barWidth1}
+            spacing={spacingPeriod1}
+            width={chartWidth}
+            initialSpacing={initialSpacing1}
           />
         </View>
       </View>
@@ -183,14 +269,14 @@ export default function PeriodComparisonView({
       {/* Period 2 summary card */}
       <View style={styles.kpiRow}>
         <View style={styles.kpiCard}>
-          <Text style={styles.kpiValue}>{data.period1Stats.entryCount}</Text>
+          <Text style={styles.kpiValue}>{data.period2Stats.entryCount}</Text>
           <Text style={styles.kpiLabel}>Entries</Text>
         </View>
         <View style={styles.kpiCard}>
           <Text style={styles.kpiValue}>
-            {data.period1Stats.averageIntensity.toFixed(1)}
+            {data.period2Stats.averageIntensity.toFixed(1)}
           </Text>
-          <Text style={styles.kpiLabel}>Avg Intensity</Text>
+          <Text style={styles.kpiLabel}>Avg Rating</Text>
         </View>
       </View>
 
@@ -205,8 +291,10 @@ export default function PeriodComparisonView({
             yAxisTextStyle={styles.axisText}
             noOfSections={5}
             maxValue={Math.max(...period2Data.map((d) => d.value)) + 5}
-            barWidth={24}
-            spacing={16}
+            barWidth={barWidth2}
+            spacing={spacingPeriod2}
+            width={chartWidth}
+            initialSpacing={initialSpacing2}
           />
         </View>
       </View>

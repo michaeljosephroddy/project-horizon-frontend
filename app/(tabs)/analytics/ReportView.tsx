@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useState } from "react";
+import React, { useContext } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 import {
   getHeuristicInsights,
@@ -6,7 +6,6 @@ import {
   PeriodComparisonResponseLite,
   TrendAnalysisResponseLite,
 } from "../../../src/analytics/insights";
-import { generateAnalyticsInsights } from "../../../src/api/aiInsights";
 import { AuthContext } from "../../../src/context/AuthContext";
 import PatternDetectionView, {
   PatternDetectionResponse,
@@ -15,41 +14,6 @@ import PeriodComparisonView, {
   PeriodComparisonResponse,
 } from "./PeriodComparisonView";
 import TrendAnalysisView, { TrendAnalysisResponse } from "./TrendAnalysisView";
-
-function formatReport(report: string) {
-  const lines = report.split("\n");
-  return lines.map((line, idx) => {
-    if (line.startsWith("==")) {
-      return (
-        <Text key={idx} style={styles.sectionHeader}>
-          {line.replace(/==/g, "").trim()}
-        </Text>
-      );
-    }
-    if (line.startsWith("Mood Analytics Report")) {
-      return (
-        <Text key={idx} style={styles.reportTitle}>
-          {line}
-        </Text>
-      );
-    }
-    if (line.startsWith("•") || line.startsWith("-")) {
-      return (
-        <Text key={idx} style={styles.bullet}>
-          {line}
-        </Text>
-      );
-    }
-    if (line.trim() === "") {
-      return <View key={idx} style={{ height: 8 }} />;
-    }
-    return (
-      <Text key={idx} style={styles.normalText}>
-        {line}
-      </Text>
-    );
-  });
-}
 
 export default function ReportView({
   reportText,
@@ -69,32 +33,7 @@ export default function ReportView({
     comparison as unknown as PeriodComparisonResponseLite
   );
   const { user } = useContext(AuthContext);
-  const [aiText, setAiText] = useState<string | null>(null);
-  const [aiLoading, setAiLoading] = useState<boolean>(false);
 
-  useEffect(() => {
-    let cancelled = false;
-    async function run() {
-      try {
-        setAiLoading(true);
-        const res = await generateAnalyticsInsights(user?.id ?? 1, {
-          reportText,
-          trend,
-          pattern,
-          comparison,
-        });
-        if (!cancelled) setAiText(res?.text || null);
-      } catch (e) {
-        if (!cancelled) setAiText(null);
-      } finally {
-        if (!cancelled) setAiLoading(false);
-      }
-    }
-    run();
-    return () => {
-      cancelled = true;
-    };
-  }, [reportText]);
   return (
     <ScrollView
       style={styles.container}
@@ -115,27 +54,6 @@ export default function ReportView({
       <Text style={styles.sectionTitle}>Period Comparison</Text>
       <View style={styles.card}>
         <PeriodComparisonView data={comparison} />
-      </View>
-
-      <Text style={styles.sectionTitle}>Clinical Summary</Text>
-      <View style={styles.card}>{formatReport(reportText)}</View>
-
-      <Text style={styles.sectionTitle}>Insights</Text>
-      <View style={styles.card}>
-        <View style={{ padding: 12 }}>
-          {(aiText ? aiText.split("\n") : heuristics).map((line, idx) => (
-            <Text key={idx} style={styles.normalText}>
-              • {line}
-            </Text>
-          ))}
-          {aiLoading && (
-            <Text
-              style={[styles.normalText, { color: "#6b7280", marginTop: 6 }]}
-            >
-              Generating AI insights…
-            </Text>
-          )}
-        </View>
       </View>
     </ScrollView>
   );

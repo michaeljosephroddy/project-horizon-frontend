@@ -25,13 +25,13 @@ const MOOD_TAGS = [
   { id: 10, name: "STRESSED" },
 ];
 
-const MOOD_RATINGS = [
-  { label: "Mild", score: 3 },
-  { label: "Moderate", score: 6 },
-  { label: "Severe", score: 9 },
-];
+const MOOD_RATINGS = Array.from({ length: 10 }, (_, i) => ({
+  label: (i + 1).toString(),
+  score: i + 1,
+}));
 
 export default function NewJournalEntry() {
+  const [success, setSuccess] = useState(false);
   const router = useRouter();
   const { user } = useContext(AuthContext);
 
@@ -77,35 +77,43 @@ export default function NewJournalEntry() {
         medications,
       };
       await apiClient.post(`/journal/users/${userId}/journal-entries`, body);
-
-      Alert.alert(
-        "Entry Created! 📝",
-        "Your journal entry has been saved successfully.",
-        [
-          {
-            text: "View All Entries",
-            onPress: () => router.push("/(tabs)/journal"),
-          },
-          {
-            text: "Go to Dashboard",
-            onPress: () => router.push("/(tabs)"),
-          },
-          {
-            text: "Add Another",
-            style: "cancel",
-            onPress: () => {
-              // Reset form for another entry
-              setSelectedMoodRating(MOOD_RATINGS[0].score);
-              setNote("");
-              setSelectedTags([]);
-              setMedications([]);
-            },
-          },
-        ]
-      );
+      setSuccess(true);
     } catch (err) {
       Alert.alert("Error", "Failed to create entry");
     }
+  }
+
+  if (success) {
+    return (
+      <View style={styles.container}>
+        <Text style={{ fontSize: 18, fontWeight: "bold", marginBottom: 16 }}>
+          Entry Created! 📝
+        </Text>
+        <Text style={{ marginBottom: 24 }}>
+          Your journal entry has been saved successfully.
+        </Text>
+        <Button
+          title="View All Entries"
+          onPress={() => router.push("/(tabs)/journal")}
+        />
+        <View style={{ height: 12 }} />
+        <Button
+          title="Go to Dashboard"
+          onPress={() => router.push("/(tabs)")}
+        />
+        <View style={{ height: 12 }} />
+        <Button
+          title="Add Another"
+          onPress={() => {
+            setSuccess(false);
+            setSelectedMoodRating(MOOD_RATINGS[0].score);
+            setNote("");
+            setSelectedTags([]);
+            setMedications([]);
+          }}
+        />
+      </View>
+    );
   }
 
   return (
