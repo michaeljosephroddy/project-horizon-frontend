@@ -2,6 +2,7 @@ import { useRouter } from "expo-router";
 import React, { useContext, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -100,7 +101,7 @@ export default function Dashboard() {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.title}>Mood Tracker Dashboard</Text>
+      <Text style={styles.title}>MoodTrendz Dashboard</Text>
 
       {loading ? (
         <View style={{ alignItems: "center", paddingVertical: 24 }}>
@@ -159,8 +160,8 @@ const styles = StyleSheet.create({
   container: {
     flexGrow: 1,
     padding: 20,
-    backgroundColor: "#f4f6f8",
     alignItems: "center",
+    marginTop: Platform.OS === "android" || Platform.OS === "ios" ? 12 : 0,
   },
   title: {
     fontSize: 26,
@@ -175,7 +176,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   statCard: {
-    backgroundColor: "#fff",
+    backgroundColor: "#f4f6f8",
     borderRadius: 12,
     padding: 15,
     flex: 1,

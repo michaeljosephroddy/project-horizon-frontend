@@ -3,6 +3,7 @@ import {
   ActivityIndicator,
   Button,
   FlatList,
+  Platform,
   StyleSheet,
   Text,
   View,
@@ -42,7 +43,8 @@ export default function JournalList() {
       const res = await apiClient.get(
         `/journal/users/${userId}/journal-entries`
       );
-      setEntries(res.data || []);
+      // console.log("API response:", res.data);
+      setEntries((res.data || []).toReversed());
     } catch (err) {
       console.log("Failed to load journal entries", err);
     } finally {
@@ -121,7 +123,12 @@ export default function JournalList() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 12, backgroundColor: "#fff" },
+  container: {
+    flex: 1,
+    padding: 12,
+    backgroundColor: "#fff",
+    marginTop: Platform.OS === "android" || Platform.OS === "ios" ? 12 : 0,
+  },
   item: { padding: 12, borderBottomWidth: 1, borderColor: "#eee" },
   rating: { fontWeight: "700", fontSize: 16, marginBottom: 6 },
   tagContainer: { flexDirection: "row", flexWrap: "wrap", marginBottom: 6 },

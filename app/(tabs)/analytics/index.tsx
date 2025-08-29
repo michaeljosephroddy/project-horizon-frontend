@@ -2,6 +2,7 @@ import React, { useContext, useState } from "react";
 import {
   ActivityIndicator,
   Button,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -224,7 +225,11 @@ export default function AnalyticsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 12 },
+  container: {
+    flex: 1,
+    padding: 12,
+    marginTop: Platform.OS === "android" || Platform.OS === "ios" ? 12 : 0,
+  },
   header: { fontSize: 22, fontWeight: "700", marginBottom: 12 },
   buttonContainer: {
     flexDirection: "row",
@@ -238,7 +243,7 @@ const styles = StyleSheet.create({
   reportButtonContainer: {
     marginBottom: 12,
   },
-  resultHeader: { fontWeight: "600", marginTop: 12 },
+  resultHeader: { fontWeight: "600", marginTop: 0 },
   reportTitle: { fontSize: 18, fontWeight: "700", marginBottom: 8 },
   sectionHeader: {
     fontSize: 16,

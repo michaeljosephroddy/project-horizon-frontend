@@ -3,6 +3,7 @@ import React, { useContext, useState } from "react";
 import {
   Alert,
   Button,
+  Platform,
   Pressable,
   StyleSheet,
   Text,
@@ -118,6 +119,8 @@ export default function NewJournalEntry() {
 
   return (
     <View style={styles.container}>
+      <Text style={styles.header}>Create Journal Entry</Text>
+
       {/* Mood Rating */}
       <Text style={styles.sectionTitle}>Mood Rating</Text>
 
@@ -182,7 +185,9 @@ export default function NewJournalEntry() {
           onChangeText={setMedDosage}
           style={[styles.input, { flex: 1, marginLeft: 8 }]}
         />
-        <Button title="Add" onPress={addMedication} />
+        <View style={{ marginLeft: 8, height: 50 }}>
+          <Button title="Add" onPress={addMedication} />
+        </View>
       </View>
       {medications.map((med, idx) => (
         <Text key={idx} style={styles.medItem}>
@@ -206,8 +211,14 @@ export default function NewJournalEntry() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 12 },
+  container: {
+    flex: 1,
+    padding: 12,
+    marginTop: Platform.OS === "android" || Platform.OS === "ios" ? 12 : 0,
+    backgroundColor: "#fff",
+  },
   sectionTitle: { fontWeight: "600", marginVertical: 8 },
+  header: { fontSize: 24, fontWeight: "700", marginBottom: 0 },
   input: {
     borderWidth: 1,
     borderColor: "#ddd",
@@ -240,4 +251,18 @@ const styles = StyleSheet.create({
   tagText: { fontSize: 12 },
   tagTextSelected: { color: "#fff" },
   medItem: { marginBottom: 4 },
+
+  addButton: {
+    backgroundColor: "#4cafef",
+    paddingHorizontal: 16,
+    paddingVertical: 8, // Same as your input padding
+    borderRadius: 6, // Same as your input borderRadius
+    justifyContent: "center",
+    alignItems: "center",
+    marginLeft: 8,
+  },
+  addButtonText: {
+    color: "#fff",
+    fontWeight: "600",
+  },
 });

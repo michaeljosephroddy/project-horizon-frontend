@@ -42,16 +42,31 @@ function generateTrendInsights(data: TrendAnalysisResponse): string[] {
     }
 
     // Most frequent mood insight
-    const moodTotals: Record<string, number> = {};
+    const moodTotals: Record<Mood, number> = Object.fromEntries(
+      Object.keys(MOOD_COLORS).map((mood) => [mood as Mood, 0])
+    ) as Record<Mood, number>;
+    let totalMoodCount = 0;
     for (const week of data.trend || []) {
       for (const [mood, count] of Object.entries(week.moodFrequency || {})) {
-        moodTotals[mood] = (moodTotals[mood] || 0) + Number(count || 0);
+        moodTotals[mood as Mood] =
+          (moodTotals[mood as Mood] || 0) + Number(count || 0);
+        totalMoodCount += Number(count || 0);
       }
     }
-    const topMood = Object.entries(moodTotals).sort((a, b) => b[1] - a[1])[0];
+    const moodPercentages: Record<Mood, number> = Object.fromEntries(
+      Object.keys(MOOD_COLORS).map((mood) => [mood as Mood, 0])
+    ) as Record<Mood, number>;
+    for (const mood of Object.keys(moodTotals) as Mood[]) {
+      moodPercentages[mood] = totalMoodCount
+        ? Math.round((moodTotals[mood] / totalMoodCount) * 100)
+        : 0;
+    }
+    const topMood = Object.entries(moodPercentages).sort(
+      (a, b) => b[1] - a[1]
+    )[0];
     if (topMood) {
       insights.push(
-        `${topMood[0]} was your most frequent mood (${topMood[1]} times).`
+        `${topMood[0]} was your most frequent mood (${topMood[1]}%).`
       );
     }
 
@@ -98,15 +113,13 @@ export default function TrendAnalysisView({
   const { width: screenWidth } = useWindowDimensions();
   const chartWidth = Math.max(screenWidth - 32, 280); // 32 for padding, min width fallback
 
-  // ...existing code...
-
+  // Prepare line chart data
   const trendOrdered = [...data.trend].sort(
     (a, b) => new Date(a.weekStart).getTime() - new Date(b.weekStart).getTime()
   );
 
   const numPoints = trendOrdered.length;
-  const spacing =
-    numPoints > 1 ? (chartWidth - 40) / (numPoints - 1) : chartWidth / 2;
+  const spacing = numPoints > 0 ? chartWidth / numPoints : chartWidth / 2;
 
   const lineData = trendOrdered.map((w) => ({
     value: Number(w.averageRating?.toFixed?.(2) ?? w.averageRating),
@@ -138,7 +151,41 @@ export default function TrendAnalysisView({
     (_, i) => String(i)
   );
 
+  // Prepare grouped bar chart data for each week
+  const groupedBarData = labels.map((label, weekIdx) => ({
+    label,
+    bars: allMoods.map((mood) => ({
+      value: Number(
+        moodLineDataSet.find((m) => m.label === mood)?.data[weekIdx]?.value ?? 0
+      ),
+      frontColor: MOOD_COLORS[mood],
+    })),
+  }));
+
   const insights = generateTrendInsights(data);
+
+  // Calculate mood percentages for legend
+  const moodTotals: Record<Mood, number> = Object.fromEntries(
+    Object.keys(MOOD_COLORS).map((mood) => [mood as Mood, 0])
+  ) as Record<Mood, number>;
+
+  let totalMoodCount = 0;
+  for (const week of trendOrdered) {
+    for (const [mood, count] of Object.entries(week.moodFrequency || {})) {
+      moodTotals[mood as Mood] =
+        (moodTotals[mood as Mood] || 0) + Number(count || 0);
+      totalMoodCount += Number(count || 0);
+    }
+  }
+
+  const moodPercentages: Record<Mood, number> = Object.fromEntries(
+    Object.keys(MOOD_COLORS).map((mood) => [
+      mood as Mood,
+      totalMoodCount
+        ? Number(((moodTotals[mood as Mood] / totalMoodCount) * 100).toFixed(1))
+        : 0,
+    ])
+  ) as Record<Mood, number>;
 
   return (
     <ScrollView style={styles.wrapper} contentContainerStyle={styles.content}>
@@ -170,6 +217,7 @@ export default function TrendAnalysisView({
           yAxisLabelTexts={["0", "2", "4", "6", "8", "10"]}
           maxValue={10}
           width={chartWidth}
+          initialSpacing={20}
         />
       </View>
 
@@ -185,7 +233,6 @@ export default function TrendAnalysisView({
               hideDataPoints={false}
               dataPointsRadius={3}
               thickness={2}
-              curved
               spacing={spacing} // <-- now fills chart width
               noOfSections={5}
               maxValue={Math.max(5, Number(maxFreq))}
@@ -194,7 +241,9 @@ export default function TrendAnalysisView({
               xAxisLabelTextStyle={styles.axisText}
               hideRules
               width={chartWidth}
+              initialSpacing={20}
             />
+
             <View style={styles.legendRow}>
               {allMoods.map((mood) => (
                 <View key={mood} style={styles.legendItem}>
@@ -207,7 +256,9 @@ export default function TrendAnalysisView({
                       marginRight: 6,
                     }}
                   />
-                  <Text style={styles.legendText}>{mood}</Text>
+                  <Text style={styles.legendText}>
+                    {mood} {moodPercentages[mood]}%
+                  </Text>
                 </View>
               ))}
             </View>
@@ -232,7 +283,7 @@ export default function TrendAnalysisView({
 
 const styles = StyleSheet.create({
   wrapper: { flex: 1 },
-  content: { padding: 12 },
+  content: { padding: 0 },
   title: { fontSize: 20, fontWeight: "700" },
   subtitle: { color: "#666", marginBottom: 8 },
   badge: {

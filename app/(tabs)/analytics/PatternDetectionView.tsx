@@ -6,7 +6,7 @@ import {
   useWindowDimensions,
   View,
 } from "react-native";
-import { BarChart } from "react-native-gifted-charts";
+import { PieChart } from "react-native-gifted-charts";
 import { MOOD_COLORS } from "../../../constants/MoodColors";
 
 type Mood = keyof typeof MOOD_COLORS;
@@ -91,6 +91,24 @@ function generatePatternInsights(data: PatternDetectionResponse): string[] {
   return insights.slice(0, 4); // Limit to 4 insights
 }
 
+function getPieChartLayout(chartWidth: number, donut: boolean = true) {
+  const isWeb = chartWidth >= 768; // web breakpoint
+
+  let baseRadius = chartWidth / 3; // same as your current mobile size
+
+  if (isWeb) {
+    baseRadius *= 0.3; // shrink only on web
+  }
+
+  const innerRadius = donut ? Math.floor(baseRadius / 2) : 0;
+
+  return {
+    radius: baseRadius,
+    innerRadius,
+    textSize: 12,
+  };
+}
+
 export default function PatternDetectionView({
   data,
   startDate,
@@ -113,8 +131,31 @@ export default function PatternDetectionView({
     })
   );
 
+  const pieData = Object.entries(data.summary.moodFrequencies).map(
+    ([mood, percentage]) => ({
+      value: Number(percentage),
+      color: MOOD_COLORS[mood as Mood],
+      // text: `${mood}`, // optional label inside chart
+    })
+  );
+
+  const pieDataTags = Object.entries(data.summary.moodFrequencies).map(
+    ([mood, percentage]) => ({
+      value: Number(percentage),
+      color: MOOD_COLORS[mood as Mood],
+      text: `${mood}`, // optional label inside chart
+    })
+  );
+
   const numPoints = barData.length;
-  const spacing = numPoints > 1 ? chartWidth / (numPoints - 1) : chartWidth / 2;
+  // const spacing =
+  //   numPoints > 1 ? (chartWidth - 40) / (numPoints - 1) : chartWidth / 2;
+
+  const { radius, innerRadius, textSize } = getPieChartLayout(
+    chartWidth,
+    numPoints,
+    true
+  );
 
   const insights = generatePatternInsights(data);
 
@@ -152,18 +193,45 @@ export default function PatternDetectionView({
       {/* Mood Distribution Chart */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Mood Distribution (%)</Text>
-        <BarChart
+        {/* <BarChart
           data={barData}
           hideRules
           xAxisLabelTextStyle={styles.axisText}
           yAxisTextStyle={styles.axisText}
           noOfSections={5}
           maxValue={Math.max(...barData.map((d) => d.value)) + 5}
-          barWidth={32}
+          barWidth={barWidth}
           spacing={spacing}
           width={chartWidth}
-          initialSpacing={10}
+          initialSpacing={initialSpacing}
+        /> */}
+        <PieChart
+          data={pieData}
+          donut // if you want a donut style
+          radius={radius}
+          innerRadius={innerRadius}
+          showText
+          textColor="#fff"
+          textSize={textSize}
         />
+      </View>
+      <View style={styles.legendRow}>
+        {pieDataTags.map((mood) => (
+          <View key={mood.text} style={styles.legendItem}>
+            <View
+              style={{
+                width: 10,
+                height: 10,
+                backgroundColor: mood.color,
+                borderRadius: 2,
+                marginRight: 6,
+              }}
+            />
+            <Text style={styles.legendText}>
+              {mood.text} {mood.value}%
+            </Text>
+          </View>
+        ))}
       </View>
 
       {/* Highlights */}
@@ -230,9 +298,22 @@ export default function PatternDetectionView({
 
 const styles = StyleSheet.create({
   wrapper: { flex: 1 },
-  content: { padding: 12 },
+  content: { padding: 0 },
   title: { fontSize: 20, fontWeight: "700" },
   subtitle: { color: "#666", marginBottom: 16 },
+  legendRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 10,
+    marginTop: 8,
+  },
+  legendItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginRight: 12,
+    marginBottom: 8,
+  },
+  legendText: { fontSize: 12, color: "#333" },
   kpiRow: {
     flexDirection: "row",
     justifyContent: "space-between",

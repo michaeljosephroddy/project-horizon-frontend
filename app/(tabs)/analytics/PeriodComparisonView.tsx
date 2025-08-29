@@ -139,7 +139,7 @@ function getBarChartLayout(
 
   if (numBars > 0) {
     // Calculate optimal bar width that fits all bars
-    const totalSpacingWidth = minSpacing * (numBars - 1);
+    const totalSpacingWidth = minSpacing * numBars;
     const availableBarWidth = availableWidth - totalSpacingWidth;
 
     barWidth = Math.floor(availableBarWidth / numBars);
@@ -150,10 +150,7 @@ function getBarChartLayout(
     const remainingWidth = availableWidth - totalBarsWidth;
 
     if (numBars > 1) {
-      spacing = Math.max(
-        minSpacing,
-        Math.floor(remainingWidth / (numBars - 1))
-      );
+      spacing = Math.max(minSpacing, Math.floor(remainingWidth / numBars));
     }
   }
 
@@ -178,7 +175,7 @@ export default function PeriodComparisonView({
 
   const period1Data = Object.entries(data.period1Stats.moodFrequencies).map(
     ([mood, percentage]) => ({
-      value: Number(percentage * 100), // Convert to percentage
+      value: Number((percentage * 100).toFixed(1)), // Convert to percentage
       label: mood,
       frontColor: MOOD_COLORS[mood as Mood],
     })
@@ -186,7 +183,7 @@ export default function PeriodComparisonView({
 
   const period2Data = Object.entries(data.period2Stats.moodFrequencies).map(
     ([mood, percentage]) => ({
-      value: Number(percentage * 100), // Convert to percentage
+      value: Number((percentage * 100).toFixed(1)), // Rounded to 1 decimal place
       label: mood,
       frontColor: MOOD_COLORS[mood as Mood],
     })
@@ -204,13 +201,13 @@ export default function PeriodComparisonView({
   } = getBarChartLayout(
     chartWidth,
     numPointsPeriod1,
-    10 // or any small value you want for initial gap
+    0 // or any small value you want for initial gap
   );
   const {
     barWidth: barWidth2,
     spacing: spacingPeriod2,
     initialSpacing: initialSpacing2,
-  } = getBarChartLayout(chartWidth, numPointsPeriod2, 10);
+  } = getBarChartLayout(chartWidth, numPointsPeriod2, 0);
 
   const insights = generateComparisonInsights(data);
 
@@ -256,11 +253,29 @@ export default function PeriodComparisonView({
             yAxisTextStyle={styles.axisText}
             noOfSections={5}
             maxValue={Math.max(...period1Data.map((d) => d.value)) + 5}
-            barWidth={barWidth1}
+            barWidth={18}
             spacing={spacingPeriod1}
             width={chartWidth}
-            initialSpacing={initialSpacing1}
+            initialSpacing={20}
           />
+        </View>
+        <View style={styles.legendRow}>
+          {period1Data.map((mood) => (
+            <View key={mood.label} style={styles.legendItem}>
+              <View
+                style={{
+                  width: 10,
+                  height: 10,
+                  backgroundColor: MOOD_COLORS[mood.label as Mood],
+                  borderRadius: 2,
+                  marginRight: 6,
+                }}
+              />
+              <Text style={styles.legendText}>
+                {mood.label} {mood.value}%
+              </Text>
+            </View>
+          ))}
         </View>
       </View>
 
@@ -291,11 +306,29 @@ export default function PeriodComparisonView({
             yAxisTextStyle={styles.axisText}
             noOfSections={5}
             maxValue={Math.max(...period2Data.map((d) => d.value)) + 5}
-            barWidth={barWidth2}
+            barWidth={18}
             spacing={spacingPeriod2}
             width={chartWidth}
-            initialSpacing={initialSpacing2}
+            initialSpacing={20}
           />
+          <View style={styles.legendRow}>
+            {period2Data.map((mood) => (
+              <View key={mood.label} style={styles.legendItem}>
+                <View
+                  style={{
+                    width: 10,
+                    height: 10,
+                    backgroundColor: MOOD_COLORS[mood.label as Mood],
+                    borderRadius: 2,
+                    marginRight: 6,
+                  }}
+                />
+                <Text style={styles.legendText}>
+                  {mood.label} {mood.value}%
+                </Text>
+              </View>
+            ))}
+          </View>
         </View>
       </View>
 
@@ -321,7 +354,7 @@ export default function PeriodComparisonView({
             </Text>
           </View>
           <View style={styles.changeRow}>
-            <Text style={styles.changeLabel}>Intensity:</Text>
+            <Text style={styles.changeLabel}>Avg Rating:</Text>
             <Text
               style={[
                 styles.changeValue,
@@ -418,14 +451,27 @@ export default function PeriodComparisonView({
 
 const styles = StyleSheet.create({
   wrapper: { flex: 1 },
-  content: { padding: 12 },
+  content: { padding: 0 },
   title: { fontSize: 20, fontWeight: "700" },
   subtitle: { color: "#666", marginBottom: 16 },
+  legendRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 10,
+    marginTop: 8,
+  },
+  legendItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginRight: 12,
+    marginBottom: 8,
+  },
+  legendText: { fontSize: 12, color: "#333" },
   periodSection: {
     marginBottom: 20,
     backgroundColor: "#f8fafc",
     borderRadius: 8,
-    padding: 12,
+    padding: 0,
   },
   periodHeader: {
     flexDirection: "row",
