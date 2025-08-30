@@ -154,7 +154,43 @@ function getBarChartLayout(
     }
   }
 
-  return { barWidth, spacing, initialSpacing };
+  return spacing;
+}
+
+// utils/moodChanges.ts
+export function parseMoodChange(
+  change: string,
+  differences: Record<string, number>
+) {
+  const match = change.match(
+    /^(\w+)\s+(increased|decreased|stayed the same)(?:\s+by\s+([0-9]+)%)*$/i
+  );
+
+  const moodName = (
+    match?.[1] ||
+    change.split(" ")[0] ||
+    ""
+  ).toUpperCase() as Mood;
+
+  const direction = (match?.[2] || "").toLowerCase();
+  const percentStr = match?.[3] || "";
+
+  const isIncrease = direction === "increased";
+  const isDecrease = direction === "decreased";
+  const isSame = direction === "stayed the same";
+
+  const diffFraction = differences[moodName] ?? 0;
+  const percent = percentStr
+    ? Number(percentStr)
+    : Math.round(Math.abs(diffFraction) * 1000) / 10;
+
+  return {
+    moodName,
+    isIncrease,
+    isDecrease,
+    isSame,
+    percent,
+  };
 }
 
 export default function PeriodComparisonView({
@@ -189,25 +225,8 @@ export default function PeriodComparisonView({
     })
   );
 
-  // period 1 spacing
-  const numPointsPeriod1 = period1Data.length;
-  // period 2 spacing
-  const numPointsPeriod2 = period2Data.length;
-
-  const {
-    barWidth: barWidth1,
-    spacing: spacingPeriod1,
-    initialSpacing: initialSpacing1,
-  } = getBarChartLayout(
-    chartWidth,
-    numPointsPeriod1,
-    0 // or any small value you want for initial gap
-  );
-  const {
-    barWidth: barWidth2,
-    spacing: spacingPeriod2,
-    initialSpacing: initialSpacing2,
-  } = getBarChartLayout(chartWidth, numPointsPeriod2, 0);
+  const spacingPeriod1 = getBarChartLayout(chartWidth, period1Data.length, 0);
+  const spacingPeriod2 = getBarChartLayout(chartWidth, period2Data.length, 0);
 
   const insights = generateComparisonInsights(data);
 
@@ -259,6 +278,8 @@ export default function PeriodComparisonView({
             initialSpacing={20}
           />
         </View>
+
+        {/* Mood Tags */}
         <View style={styles.legendRow}>
           {period1Data.map((mood) => (
             <View key={mood.label} style={styles.legendItem}>
@@ -311,6 +332,8 @@ export default function PeriodComparisonView({
             width={chartWidth}
             initialSpacing={20}
           />
+
+          {/* Mood Tags */}
           <View style={styles.legendRow}>
             {period2Data.map((mood) => (
               <View key={mood.label} style={styles.legendItem}>
@@ -378,29 +401,8 @@ export default function PeriodComparisonView({
         <Text style={styles.sectionTitle}>Mood Changes</Text>
         <View style={styles.moodChangesContainer}>
           {data.differences.moodChangeSummary.map((change, index) => {
-            // e.g. "CONTENT increased by 8%" or "IRRITATED stayed the same"
-            const match = change.match(
-              /^(\w+)\s+(increased|decreased|stayed the same)(?:\s+by\s+([0-9]+)%)*$/i
-            );
-            const moodName = (
-              match?.[1] ||
-              change.split(" ")[0] ||
-              ""
-            ).toUpperCase() as Mood;
-            const direction = (match?.[2] || "").toLowerCase();
-            const percentStr = match?.[3] || "";
-
-            const isIncrease = direction === "increased";
-            const isDecrease = direction === "decreased";
-            const isSame = direction === "stayed the same";
-
-            // If percent missing in summary, try to compute from differences map
-            const diffFraction = (data.differences.moodFrequencyDifference[
-              moodName
-            ] ?? 0) as number;
-            const percent = percentStr
-              ? Number(percentStr)
-              : Math.round(Math.abs(diffFraction) * 1000) / 10;
+            const { moodName, isIncrease, isDecrease, isSame, percent } =
+              parseMoodChange(change, data.differences.moodFrequencyDifference);
 
             const moodColor = MOOD_COLORS[moodName] || "#9ca3af";
             const deltaColor = isIncrease

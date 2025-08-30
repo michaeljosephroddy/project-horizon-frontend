@@ -1,8 +1,11 @@
+import { Ionicons } from "@react-native-vector-icons/ionicons";
+import { router } from "expo-router";
 import React, { useContext, useState } from "react";
 import {
   ActivityIndicator,
   Button,
   Platform,
+  Pressable,
   ScrollView,
   StyleSheet,
   Text,
@@ -64,7 +67,7 @@ function getPeriodComparisonRanges(weeks: number) {
   };
 }
 
-export default function AnalyticsScreen() {
+export default function AnalyticsView() {
   const [result, setResult] = useState<any>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [trendData, setTrendData] = useState<TrendAnalysisResponse | null>(
@@ -141,7 +144,22 @@ export default function AnalyticsScreen() {
 
   return (
     <ScrollView style={styles.container}>
-      <Text style={styles.header}>Analytics</Text>
+      {/* Header row with back button */}
+      <View
+        style={{
+          flexDirection: "row",
+          alignItems: "center",
+          marginBottom: 0,
+          marginTop: 0,
+        }}
+      >
+        <Pressable onPress={() => router.push("/(tabs)")}>
+          <Ionicons name="arrow-back" size={24} color="#007AFF" />
+        </Pressable>
+        <Text style={[styles.header, { marginLeft: 12, marginTop: 0 }]}>
+          Analytics
+        </Text>
+      </View>
 
       {/* Time period selection buttons */}
       <View style={styles.buttonContainer}>
@@ -230,11 +248,12 @@ const styles = StyleSheet.create({
     padding: 12,
     marginTop: Platform.OS === "android" || Platform.OS === "ios" ? 12 : 0,
   },
-  header: { fontSize: 22, fontWeight: "700", marginBottom: 12 },
+  header: { fontSize: 22, fontWeight: "700", marginBottom: 0 },
   buttonContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
     marginBottom: 12,
+    marginTop: 12,
   },
   buttonWrapper: {
     flex: 1,

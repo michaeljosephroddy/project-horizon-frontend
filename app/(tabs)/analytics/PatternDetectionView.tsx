@@ -121,25 +121,7 @@ export default function PatternDetectionView({
   const { width: screenWidth } = useWindowDimensions();
   const chartWidth = Math.max(screenWidth - 32, 280); // 32 for padding, min width fallback
 
-  // ...existing code...
-
-  const barData = Object.entries(data.summary.moodFrequencies).map(
-    ([mood, percentage]) => ({
-      value: Number(percentage),
-      label: mood,
-      frontColor: MOOD_COLORS[mood as Mood],
-    })
-  );
-
   const pieData = Object.entries(data.summary.moodFrequencies).map(
-    ([mood, percentage]) => ({
-      value: Number(percentage),
-      color: MOOD_COLORS[mood as Mood],
-      // text: `${mood}`, // optional label inside chart
-    })
-  );
-
-  const pieDataTags = Object.entries(data.summary.moodFrequencies).map(
     ([mood, percentage]) => ({
       value: Number(percentage),
       color: MOOD_COLORS[mood as Mood],
@@ -147,15 +129,7 @@ export default function PatternDetectionView({
     })
   );
 
-  const numPoints = barData.length;
-  // const spacing =
-  //   numPoints > 1 ? (chartWidth - 40) / (numPoints - 1) : chartWidth / 2;
-
-  const { radius, innerRadius, textSize } = getPieChartLayout(
-    chartWidth,
-    numPoints,
-    true
-  );
+  const { radius, innerRadius, textSize } = getPieChartLayout(chartWidth, true);
 
   const insights = generatePatternInsights(data);
 
@@ -193,30 +167,20 @@ export default function PatternDetectionView({
       {/* Mood Distribution Chart */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Mood Distribution (%)</Text>
-        {/* <BarChart
-          data={barData}
-          hideRules
-          xAxisLabelTextStyle={styles.axisText}
-          yAxisTextStyle={styles.axisText}
-          noOfSections={5}
-          maxValue={Math.max(...barData.map((d) => d.value)) + 5}
-          barWidth={barWidth}
-          spacing={spacing}
-          width={chartWidth}
-          initialSpacing={initialSpacing}
-        /> */}
         <PieChart
           data={pieData}
           donut // if you want a donut style
           radius={radius}
           innerRadius={innerRadius}
-          showText
           textColor="#fff"
           textSize={textSize}
+          showText={false}
         />
       </View>
+
+      {/* Mood Tags */}
       <View style={styles.legendRow}>
-        {pieDataTags.map((mood) => (
+        {pieData.map((mood) => (
           <View key={mood.text} style={styles.legendItem}>
             <View
               style={{
@@ -281,6 +245,7 @@ export default function PatternDetectionView({
         </View>
       </View>
 
+      {/* Key Insights */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Key Insights</Text>
         <View style={styles.insightsContainer}>

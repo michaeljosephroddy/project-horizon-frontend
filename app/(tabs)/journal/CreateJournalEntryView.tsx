@@ -1,3 +1,4 @@
+import Ionicons from "@react-native-vector-icons/ionicons";
 import { useRouter } from "expo-router";
 import React, { useContext, useState } from "react";
 import {
@@ -87,9 +88,28 @@ export default function NewJournalEntry() {
   if (success) {
     return (
       <View style={styles.container}>
-        <Text style={{ fontSize: 18, fontWeight: "bold", marginBottom: 16 }}>
-          Entry Created! 📝
-        </Text>
+        {/* Header row with back button */}
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            marginBottom: 0,
+
+            marginTop: 0,
+          }}
+        >
+          <Pressable
+            onPress={() =>
+              router.push("/(tabs)/journal/CreateJournalEntryView")
+            }
+          >
+            <Ionicons name="arrow-back" size={24} color="#007AFF" />
+          </Pressable>
+          <Text style={[styles.header, { marginLeft: 12, marginTop: 0 }]}>
+            Entry Created! 📝
+          </Text>
+        </View>
+
         <Text style={{ marginBottom: 24 }}>
           Your journal entry has been saved successfully.
         </Text>
@@ -119,7 +139,23 @@ export default function NewJournalEntry() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.header}>Create Journal Entry</Text>
+      {/* Header row with back button */}
+      <View
+        style={{
+          flexDirection: "row",
+          alignItems: "center",
+          marginBottom: 0,
+
+          marginTop: 0,
+        }}
+      >
+        <Pressable onPress={() => router.push("/(tabs)")}>
+          <Ionicons name="arrow-back" size={24} color="#007AFF" />
+        </Pressable>
+        <Text style={[styles.header, { marginLeft: 12, marginTop: 0 }]}>
+          Create Journal Entry
+        </Text>
+      </View>
 
       {/* Mood Rating */}
       <Text style={styles.sectionTitle}>Mood Rating</Text>

@@ -1,11 +1,5 @@
 import React from "react";
-import {
-  ScrollView,
-  StyleSheet,
-  Text,
-  useWindowDimensions,
-  View,
-} from "react-native";
+import { StyleSheet, Text, useWindowDimensions, View } from "react-native";
 import { LineChart } from "react-native-gifted-charts";
 import { MOOD_COLORS } from "../../../constants/MoodColors";
 
@@ -188,7 +182,7 @@ export default function TrendAnalysisView({
   ) as Record<Mood, number>;
 
   return (
-    <ScrollView style={styles.wrapper} contentContainerStyle={styles.content}>
+    <View style={[styles.wrapper, styles.content]}>
       <Text style={styles.title}>Trend Analysis</Text>
       <Text style={styles.subtitle}>
         {new Date(data.startDate).toDateString()} →{" "}
@@ -277,7 +271,7 @@ export default function TrendAnalysisView({
           ))}
         </View>
       </View>
-    </ScrollView>
+    </View>
   );
 }
 

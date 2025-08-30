@@ -134,9 +134,9 @@ export default function Dashboard() {
       {/* Navigation Buttons */}
       <TouchableOpacity
         style={styles.button}
-        onPress={() => router.push("/(tabs)/journal/newJournalEntry")}
+        onPress={() => router.push("/(tabs)/journal/CreateJournalEntryView")}
       >
-        <Text style={styles.buttonText}>➕ Add Mood Entry</Text>
+        <Text style={styles.buttonText}>➕ Add Journal Entry</Text>
       </TouchableOpacity>
 
       <TouchableOpacity

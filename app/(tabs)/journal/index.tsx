@@ -1,9 +1,11 @@
+import Ionicons from "@react-native-vector-icons/ionicons";
+import { router } from "expo-router";
 import React, { useContext, useEffect, useState } from "react";
 import {
   ActivityIndicator,
-  Button,
   FlatList,
   Platform,
+  Pressable,
   StyleSheet,
   Text,
   View,
@@ -68,13 +70,23 @@ export default function JournalList() {
 
   return (
     <View style={styles.container}>
-      <Button
-        title="New Entry"
-        onPress={() => {
-          /* navigate to new */
+      {/* Header row with back button */}
+      <View
+        style={{
+          flexDirection: "row",
+          alignItems: "center",
+          marginBottom: 0,
+
+          marginTop: 0,
         }}
-        disabled={loading}
-      />
+      >
+        <Pressable onPress={() => router.push("/(tabs)")}>
+          <Ionicons name="arrow-back" size={24} color="#007AFF" />
+        </Pressable>
+        <Text style={[styles.header, { marginLeft: 12, marginTop: 0 }]}>
+          Create Journal Entry
+        </Text>
+      </View>
 
       {loading ? (
         <View style={styles.loadingContainer}>
@@ -129,6 +141,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     marginTop: Platform.OS === "android" || Platform.OS === "ios" ? 12 : 0,
   },
+  header: { fontSize: 24, fontWeight: "700", marginBottom: 0 },
   item: { padding: 12, borderBottomWidth: 1, borderColor: "#eee" },
   rating: { fontWeight: "700", fontSize: 16, marginBottom: 6 },
   tagContainer: { flexDirection: "row", flexWrap: "wrap", marginBottom: 6 },

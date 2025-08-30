@@ -2,8 +2,6 @@ import axios from "axios";
 import { Platform } from "react-native";
 import { getToken } from "../context/tokenStore";
 
-// const baseURL = process.env.API_BASE_URL ?? "http://192.168.8.14:8080/api";
-
 const baseURL =
   Platform.OS === "web"
     ? "http://localhost:8080/api"
