@@ -251,7 +251,6 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 12,
     marginTop: Platform.OS === "android" || Platform.OS === "ios" ? 12 : 0,
-    backgroundColor: "#fff",
   },
   sectionTitle: { fontWeight: "600", marginVertical: 8 },
   header: { fontSize: 24, fontWeight: "700", marginBottom: 0 },

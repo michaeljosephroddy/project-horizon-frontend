@@ -138,7 +138,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 12,
-    backgroundColor: "#fff",
     marginTop: Platform.OS === "android" || Platform.OS === "ios" ? 12 : 0,
   },
   header: { fontSize: 24, fontWeight: "700", marginBottom: 0 },
