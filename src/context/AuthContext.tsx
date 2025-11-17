@@ -2,9 +2,10 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { authStorage } from '../utils/authStorage';
 
 type AuthUser = {
-  id: string;
+  userId: number;  // Changed to match backend
   email: string;
-  name?: string;
+  createdAt?: string;
+  updatedAt?: string;
 };
 
 type AuthContextType = {

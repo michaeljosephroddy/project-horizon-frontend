@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { SafeAreaView, TextInput, Text, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
 import { authService } from '../services/authService';
+import { registerStyles } from '../styles/registerStyles'
 
 export const RegisterScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   const [name, setName] = useState('');
@@ -22,18 +23,18 @@ export const RegisterScreen: React.FC<{ navigation: any }> = ({ navigation }) =>
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <Text style={styles.title}>Create Account</Text>
+    <SafeAreaView style={registerStyles.container}>
+      <Text style={registerStyles.title}>Create Account</Text>
 
       <TextInput
         placeholder="Name"
-        style={styles.input}
+        style={registerStyles.input}
         value={name}
         onChangeText={setName}
       />
       <TextInput
         placeholder="Email"
-        style={styles.input}
+        style={registerStyles.input}
         value={email}
         onChangeText={setEmail}
         autoCapitalize="none"
@@ -41,32 +42,19 @@ export const RegisterScreen: React.FC<{ navigation: any }> = ({ navigation }) =>
       />
       <TextInput
         placeholder="Password"
-        style={styles.input}
+        style={registerStyles.input}
         value={password}
         onChangeText={setPassword}
         secureTextEntry
       />
 
-      <TouchableOpacity onPress={handleRegister} style={styles.button} disabled={loading}>
-        {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Register</Text>}
+      <TouchableOpacity onPress={handleRegister} style={registerStyles.button} disabled={loading}>
+        {loading ? <ActivityIndicator color="#fff" /> : <Text style={registerStyles.buttonText}>Register</Text>}
       </TouchableOpacity>
 
       <TouchableOpacity onPress={() => navigation.replace('Login')}>
-        <Text style={styles.link}>Already have an account? Login</Text>
+        <Text style={registerStyles.link}>Already have an account? Login</Text>
       </TouchableOpacity>
     </SafeAreaView>
   );
-};
-
-const styles = {
-  container: { flex: 1, justifyContent: 'center', padding: 24, backgroundColor: '#fff' },
-  title: { fontSize: 28, fontWeight: '700', marginBottom: 24, color: '#333', textAlign: 'center' },
-  input: {
-    borderWidth: 1, borderColor: '#ccc', borderRadius: 8, padding: 12, marginBottom: 12,
-  },
-  button: {
-    backgroundColor: '#007AFF', padding: 16, borderRadius: 8, alignItems: 'center', marginTop: 12,
-  },
-  buttonText: { color: '#fff', fontWeight: '600', fontSize: 16 },
-  link: { marginTop: 16, color: '#007AFF', textAlign: 'center' },
 };

@@ -6,12 +6,13 @@ import { SleepMetrics } from '../components/SleepMetrics';
 import { analyticsService } from '../services/analyticsService';
 import { analyticsStyles } from '../styles/analyticsStyles';
 import { MedicationMetrics as MedicationMetricsType, MoodMetrics as MoodMetricsType, SleepMetrics as SleepMetricsType } from '../types/analytics';
+import { useAuth } from '../context/AuthContext'; // Add this import
 
-const USER_ID = '3'; // Replace with dynamic user ID
-const START_DATE = '2025-08-01'; // Set your start date
-const END_DATE = '2025-08-28'; // Set your end date
+const START_DATE = '2025-08-01';
+const END_DATE = '2025-08-28';
 
 export const AnalyticsScreen: React.FC = () => {
+  const { user } = useAuth(); // Get user from auth context
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [moodData, setMoodData] = useState<MoodMetricsType | null>(null);
@@ -20,7 +21,7 @@ export const AnalyticsScreen: React.FC = () => {
 
   useEffect(() => {
     loadAnalytics();
-  }, []);
+  }, []); // Just run once on mount
 
   const loadAnalytics = async () => {
     try {
@@ -28,9 +29,9 @@ export const AnalyticsScreen: React.FC = () => {
       setError(null);
 
       const [mood, sleep, medication] = await Promise.all([
-        analyticsService.getMoodMetrics(USER_ID, START_DATE, END_DATE),
-        analyticsService.getSleepMetrics(USER_ID, START_DATE, END_DATE),
-        analyticsService.getMedicationMetrics(USER_ID, START_DATE, END_DATE),
+        analyticsService.getMoodMetrics(String(user!.userId), START_DATE, END_DATE), // user! since we know it exists
+        analyticsService.getSleepMetrics(String(user!.userId), START_DATE, END_DATE),
+        analyticsService.getMedicationMetrics(String(user!.userId), START_DATE, END_DATE),
       ]);
 
       setMoodData(mood);

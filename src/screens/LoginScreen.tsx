@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { SafeAreaView, TextInput, Text, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
 import { useAuth } from '../context/AuthContext';
+import { loginStyles } from '../styles/loginStyles';
 import { authService } from '../services/authService';
 
 export const LoginScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
@@ -23,12 +24,12 @@ export const LoginScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <Text style={styles.title}>Login</Text>
+    <SafeAreaView style={loginStyles.container}>
+      <Text style={loginStyles.title}>Login</Text>
 
       <TextInput
         placeholder="Email"
-        style={styles.input}
+        style={loginStyles.input}
         value={email}
         onChangeText={setEmail}
         autoCapitalize="none"
@@ -37,32 +38,19 @@ export const LoginScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
 
       <TextInput
         placeholder="Password"
-        style={styles.input}
+        style={loginStyles.input}
         value={password}
         onChangeText={setPassword}
         secureTextEntry
       />
 
-      <TouchableOpacity onPress={handleLogin} style={styles.button} disabled={loading}>
-        {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Login</Text>}
+      <TouchableOpacity onPress={handleLogin} style={loginStyles.button} disabled={loading}>
+        {loading ? <ActivityIndicator color="#fff" /> : <Text style={loginStyles.buttonText}>Login</Text>}
       </TouchableOpacity>
 
       <TouchableOpacity onPress={() => navigation.navigate('Register')}>
-        <Text style={styles.link}>Don’t have an account? Register</Text>
+        <Text style={loginStyles.link}>Don’t have an account? Register</Text>
       </TouchableOpacity>
     </SafeAreaView>
   );
-};
-
-const styles = {
-  container: { flex: 1, justifyContent: 'center', padding: 24, backgroundColor: '#fff' },
-  title: { fontSize: 28, fontWeight: '700', marginBottom: 24, color: '#333', textAlign: 'center' },
-  input: {
-    borderWidth: 1, borderColor: '#ccc', borderRadius: 8, padding: 12, marginBottom: 12,
-  },
-  button: {
-    backgroundColor: '#007AFF', padding: 16, borderRadius: 8, alignItems: 'center', marginTop: 12,
-  },
-  buttonText: { color: '#fff', fontWeight: '600', fontSize: 16 },
-  link: { marginTop: 16, color: '#007AFF', textAlign: 'center' },
 };
