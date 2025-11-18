@@ -26,6 +26,8 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({ navigation }) 
     const [modalVisible, setModalVisible] = useState(false);
     const [refreshing, setRefreshing] = useState(false);
     const [loading, setLoading] = useState(true);
+    const [daysPeriod, setDaysPeriod] = useState(String || "");
+
     const [wellbeingStats, setWellbeingStats] = useState({
         avgMood: 0,
         moodTrend: '',
@@ -40,11 +42,14 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({ navigation }) 
 
     const loadWellbeingData = async () => {
         try {
-            // Get last 7 days for quick stats
             /* const endDate = new Date().toISOString().split('T')[0];
             const startDate = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]; */
             const START_DATE = '2025-08-01';
-            const END_DATE = '2025-08-28';
+            const END_DATE = '2025-08-30';
+
+            const diffDays = Math.round((new Date(END_DATE).getTime() - new Date(START_DATE).getTime()) / (1000 * 60 * 60 * 24) + 1);
+
+            setDaysPeriod(String(diffDays))
 
             // Use userId or id based on your auth setup
             const userId = String(user?.userId);
@@ -134,7 +139,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({ navigation }) 
 
                 {/* Wellbeing Stats Section */}
                 <View style={dashboardStyles.statsSection}>
-                    <Text style={dashboardStyles.sectionTitle}>Your Wellbeing (Last 7 days)</Text>
+                    <Text style={dashboardStyles.sectionTitle}>Your Wellbeing (Last {daysPeriod} days)</Text>
 
                     {loading ? (
                         <ActivityIndicator size="large" color="#007AFF" style={{ marginVertical: 20 }} />

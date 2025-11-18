@@ -8,7 +8,7 @@ import { useAuth } from '../context/AuthContext'; // Add this import
 import { MedicationMetrics as MedicationMetricsType, MoodMetrics as MoodMetricsType } from '../types/analytics';
 
 const START_DATE = '2025-08-01';
-const END_DATE = '2025-08-28';
+const END_DATE = '2025-08-30';
 
 export const MoodAnalyticsScreen: React.FC = () => {
     const { user } = useAuth(); // Get user from auth context

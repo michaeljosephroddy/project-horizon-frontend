@@ -60,16 +60,6 @@ export const MedicationMetrics: React.FC<MedicationMetricsProps> = ({ data }) =>
                         <Text style={componentStyles.label}>Timing:</Text>
                         <Text style={componentStyles.value}>{med.timingDescription}</Text>
                     </View>
-
-                    <View style={componentStyles.row}>
-                        <Text style={componentStyles.label}>Current Streak:</Text>
-                        <Text style={componentStyles.value}>{med.currentStreak} days</Text>
-                    </View>
-
-                    <View style={componentStyles.row}>
-                        <Text style={componentStyles.label}>Longest Streak:</Text>
-                        <Text style={componentStyles.value}>{med.longestStreak} days</Text>
-                    </View>
                 </View>
             ))}
         </View>

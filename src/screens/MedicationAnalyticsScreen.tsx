@@ -7,7 +7,7 @@ import { MedicationMetrics as MedicationMetricsType } from '../types/analytics';
 import { useAuth } from '../context/AuthContext'; // Add this import
 
 const START_DATE = '2025-08-01';
-const END_DATE = '2025-08-28';
+const END_DATE = '2025-08-30';
 
 export const MedicationAnalyticsScreen: React.FC = () => {
     const { user } = useAuth(); // Get user from auth context
