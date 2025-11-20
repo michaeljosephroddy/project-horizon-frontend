@@ -1,5 +1,5 @@
 // components/LogModal.tsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     Modal,
     View,
@@ -23,6 +23,15 @@ interface LogModalProps {
     onLogCreated: () => void;
 }
 
+interface UserMedication {
+    userMedicationId: number;
+    medicationId: number;
+    name: string;
+    dosage?: string;
+    note?: string;
+    description?: string;
+}
+
 export const LogModal: React.FC<LogModalProps> = ({ visible, onClose, onLogCreated }) => {
     const { user } = useAuth();
     const [selectedType, setSelectedType] = useState<'mood' | 'sleep' | 'medication' | null>(null);
@@ -35,13 +44,33 @@ export const LogModal: React.FC<LogModalProps> = ({ visible, onClose, onLogCreat
 
     // Sleep state
     const [sleepHours, setSleepHours] = useState('8');
-    const [sleepQuality, setSleepQuality] = useState(1); // 1=Poor, 2=Fair, 3=Good, 4=Excellent
+    const [sleepQuality, setSleepQuality] = useState(1);
     const [sleepNote, setSleepNote] = useState('');
     const [sleepDate] = useState(new Date().toISOString().split('T')[0]);
 
     // Medication state
     const [medicationNote, setMedicationNote] = useState('');
     const [medicationTime] = useState(new Date().toISOString());
+    const [selectedMedications, setSelectedMedications] = useState<UserMedication[]>([]);
+    const [userMedications, setUserMedications] = useState<UserMedication[]>([]);
+    const [showMedicationPicker, setShowMedicationPicker] = useState(false);
+
+    // Fetch user medications when medication type is selected
+    useEffect(() => {
+        if (visible && selectedType === 'medication') {
+            fetchUserMedications();
+        }
+    }, [visible, selectedType]);
+
+    const fetchUserMedications = async () => {
+        try {
+            const medications = await logService.getUserMedications(user?.userId!);
+            setUserMedications(medications);
+        } catch (error) {
+            console.error('Error fetching medications:', error);
+            Alert.alert('Error', 'Failed to load medications');
+        }
+    };
 
     const handleMoodTagToggle = (tagId: number) => {
         setSelectedMoodTagIds((prev) => {
@@ -49,6 +78,17 @@ export const LogModal: React.FC<LogModalProps> = ({ visible, onClose, onLogCreat
                 return prev.filter((id) => id !== tagId);
             } else {
                 return [...prev, tagId];
+            }
+        });
+    };
+
+    const handleMedicationToggle = (medication: UserMedication) => {
+        setSelectedMedications((prev) => {
+            const isSelected = prev.some(med => med.userMedicationId === medication.userMedicationId);
+            if (isSelected) {
+                return prev.filter(med => med.userMedicationId !== medication.userMedicationId);
+            } else {
+                return [...prev, medication];
             }
         });
     };
@@ -62,6 +102,8 @@ export const LogModal: React.FC<LogModalProps> = ({ visible, onClose, onLogCreat
         setSleepQuality(3);
         setSleepNote('');
         setMedicationNote('');
+        setSelectedMedications([]);
+        setShowMedicationPicker(false);
     };
 
     const handleClose = () => {
@@ -70,8 +112,14 @@ export const LogModal: React.FC<LogModalProps> = ({ visible, onClose, onLogCreat
     };
 
     const handleSubmit = async () => {
-        if (!selectedType) { 
-            return; 
+        if (!selectedType) {
+            return;
+        }
+
+        // Validate medication selection
+        if (selectedType === 'medication' && selectedMedications.length === 0) {
+            Alert.alert('Error', 'Please select at least one medication');
+            return;
         }
 
         setLoading(true);
@@ -102,12 +150,18 @@ export const LogModal: React.FC<LogModalProps> = ({ visible, onClose, onLogCreat
                     break;
 
                 case 'medication':
-                    await logService.createMedicationLog({
-                        userId: userId,
-                        takenAt: medicationTime,
-                        note: medicationNote,
-                    });
-                    Alert.alert('Success', 'Medication log saved successfully!');
+                    // Create a log for each selected medication
+                    await Promise.all(
+                        selectedMedications.map(medication =>
+                            logService.createMedicationLog({
+                                userId: userId,
+                                userMedicationId: medication.userMedicationId,
+                                takenAt: medicationTime,
+                                note: medicationNote,
+                            })
+                        )
+                    );
+                    Alert.alert('Success', `${selectedMedications.length} medication log(s) saved successfully!`);
                     break;
             }
 
@@ -184,7 +238,6 @@ export const LogModal: React.FC<LogModalProps> = ({ visible, onClose, onLogCreat
                 </View>
             </View>
 
-            {/* Mood Tags Section */}
             <View style={logModalStyles.moodTagsSection}>
                 <Text style={logModalStyles.sectionTitle}>
                     Select mood tags {selectedMoodTagIds.length > 0 && `(${selectedMoodTagIds.length} selected)`}
@@ -265,16 +318,113 @@ export const LogModal: React.FC<LogModalProps> = ({ visible, onClose, onLogCreat
         <View style={logModalStyles.formContainer}>
             <Text style={logModalStyles.formTitle}>Medication Intake</Text>
 
-            <View style={logModalStyles.medicationInfo}>
-                <MaterialCommunityIcons name="check-circle" size={48} color="#4CAF50" />
-                <Text style={logModalStyles.medicationText}>
-                    Recording medication taken at {new Date().toLocaleTimeString()}
-                </Text>
-            </View>
+            {/* Medication Picker */}
+            <TouchableOpacity
+                style={logModalStyles.medicationSelector}
+                onPress={() => setShowMedicationPicker(!showMedicationPicker)}
+            >
+                <View style={logModalStyles.selectorContent}>
+                    <MaterialCommunityIcons name="pill" size={24} color="#666" />
+                    <Text style={[
+                        logModalStyles.selectorText,
+                        selectedMedications.length === 0 && logModalStyles.selectorPlaceholder
+                    ]}>
+                        {selectedMedications.length > 0
+                            ? `${selectedMedications.length} medication(s) selected`
+                            : 'Select Medications'
+                        }
+                    </Text>
+                    <MaterialCommunityIcons
+                        name={showMedicationPicker ? "chevron-up" : "chevron-down"}
+                        size={24}
+                        color="#666"
+                    />
+                </View>
+            </TouchableOpacity>
 
+            {/* Medication List */}
+            {showMedicationPicker && (
+                <View style={logModalStyles.medicationListContainer}>
+                    <ScrollView style={logModalStyles.medicationList}>
+                        {userMedications.length === 0 ? (
+                            <View style={logModalStyles.emptyState}>
+                                <MaterialCommunityIcons name="pill-off" size={48} color="#ccc" />
+                                <Text style={logModalStyles.emptyStateText}>
+                                    No medications added yet
+                                </Text>
+                                <Text style={logModalStyles.emptyStateSubtext}>
+                                    Add medications in your profile to track them here
+                                </Text>
+                            </View>
+                        ) : (
+                            userMedications.map((med) => {
+                                const isSelected = selectedMedications.some(
+                                    m => m.userMedicationId === med.userMedicationId
+                                );
+
+                                return (
+                                    <TouchableOpacity
+                                        key={med.userMedicationId}
+                                        style={[
+                                            logModalStyles.medicationItem,
+                                            isSelected && logModalStyles.medicationItemSelected
+                                        ]}
+                                        onPress={() => {
+                                            console.log('Clicked medication:', med.name, med.userMedicationId);
+                                            handleMedicationToggle(med);
+                                        }}
+                                    >
+                                        <View style={logModalStyles.medicationItemContent}>
+                                            <Text style={logModalStyles.medicationName}>
+                                                {med.name}
+                                            </Text>
+                                            {med.dosage && (
+                                                <Text style={logModalStyles.medicationDosage}>
+                                                    Dosage: {med.dosage}
+                                                </Text>
+                                            )}
+                                            {med.note && (
+                                                <Text style={logModalStyles.medicationItemNote}>
+                                                    {med.note}
+                                                </Text>
+                                            )}
+                                        </View>
+                                        {isSelected && (
+                                            <MaterialCommunityIcons
+                                                name="check-circle"
+                                                size={24}
+                                                color="#4CAF50"
+                                            />
+                                        )}
+                                    </TouchableOpacity>
+                                );
+                            })
+                        )}
+                    </ScrollView>
+                </View>
+            )}
+
+            {/* Confirmation display when medications are selected */}
+            {selectedMedications.length > 0 && !showMedicationPicker && (
+                <View style={logModalStyles.medicationInfo}>
+                    <MaterialCommunityIcons name="check-circle" size={48} color="#4CAF50" />
+                    <Text style={logModalStyles.medicationText}>
+                        Recording {selectedMedications.length} medication(s) taken at {new Date().toLocaleTimeString()}
+                    </Text>
+                    <View style={{ marginTop: 10, width: '100%' }}>
+                        {selectedMedications.map((med) => (
+                            <Text key={`selected-${med.userMedicationId}`} style={{ fontSize: 14, color: '#666', marginTop: 5 }}>
+                                • {med.name}{med.dosage ? ` (${med.dosage})` : ''}
+                            </Text>
+                        ))}
+                    </View>
+                </View>
+            )}
+
+            {/* Notes input */}
             <TextInput
                 style={logModalStyles.textInput}
-                placeholder="Add notes (optional) - e.g., side effects, dosage changes"
+                placeholder="Add notes (optional) - e.g., side effects, with food"
                 value={medicationNote}
                 onChangeText={setMedicationNote}
                 multiline

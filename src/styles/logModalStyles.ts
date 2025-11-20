@@ -189,4 +189,85 @@ export const logModalStyles = StyleSheet.create({
         marginTop: 12,
         textAlign: 'center',
     },
+    // Add these to your existing logModalStyles
+    medicationSelector: {
+        backgroundColor: '#fff',
+        borderWidth: 1,
+        borderColor: '#ddd',
+        borderRadius: 8,
+        padding: 15,
+        marginBottom: 15,
+    },
+    selectorContent: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+    },
+    selectorText: {
+        flex: 1,
+        marginLeft: 10,
+        fontSize: 16,
+        color: '#333',
+    },
+    selectorPlaceholder: {
+        color: '#999',
+    },
+    medicationListContainer: {
+        maxHeight: 250,
+        marginBottom: 15,
+    },
+    medicationList: {
+        backgroundColor: '#f9f9f9',
+        borderRadius: 8,
+        borderWidth: 1,
+        borderColor: '#ddd',
+    },
+    medicationItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        padding: 15,
+        borderBottomWidth: 1,
+        borderBottomColor: '#eee',
+        backgroundColor: '#fff',
+    },
+    medicationItemSelected: {
+        backgroundColor: '#e8f5e9',
+    },
+    medicationItemContent: {
+        flex: 1,
+    },
+    medicationName: {
+        fontSize: 16,
+        fontWeight: '600',
+        color: '#333',
+        marginBottom: 4,
+    },
+    medicationDosage: {
+        fontSize: 14,
+        color: '#666',
+        marginBottom: 2,
+    },
+    medicationItemNote: {
+        fontSize: 12,
+        color: '#999',
+        fontStyle: 'italic',
+        marginTop: 2,
+    },
+    emptyState: {
+        padding: 40,
+        alignItems: 'center',
+    },
+    emptyStateText: {
+        fontSize: 16,
+        color: '#666',
+        marginTop: 10,
+        marginBottom: 5,
+        textAlign: 'center',
+    },
+    emptyStateSubtext: {
+        fontSize: 14,
+        color: '#999',
+        textAlign: 'center',
+    },
 });

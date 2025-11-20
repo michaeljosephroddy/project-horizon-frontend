@@ -31,7 +31,7 @@ export const MedicationMetrics: React.FC<MedicationMetricsProps> = ({ data }) =>
             <Text style={componentStyles.cardTitle}>Medication Metrics</Text>
 
             <View style={componentStyles.row}>
-                <Text style={componentStyles.label}>Adherence Rate:</Text>
+                <Text style={componentStyles.label}>Daily Adherence Rate:</Text>
                 {getAdherenceBadge(data.adherenceRate)}
             </View>
 

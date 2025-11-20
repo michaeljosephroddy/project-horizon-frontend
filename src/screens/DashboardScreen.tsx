@@ -214,7 +214,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({ navigation }) 
                                         {Math.round(wellbeingStats.adherenceRate)}%
                                     </Text>
                                     <Text style={dashboardStyles.statSubtext}>
-                                        Adherence Rate
+                                        Daily Adherence Rate
                                     </Text>
                                 </View>
                                 <MaterialCommunityIcons name="chevron-right" size={24} color="#ccc" />
