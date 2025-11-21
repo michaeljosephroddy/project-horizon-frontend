@@ -8,13 +8,15 @@ import {
     Alert,
     ScrollView,
     ActivityIndicator,
-    RefreshControl
+    RefreshControl,
+    StyleSheet,
 } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { dashboardStyles } from '../styles/dashboardStyles';
 import { useAuth } from '../context/AuthContext';
 import { FAB } from '../components/FAB';
 import { LogModal } from '../components/LogModal';
+import { BurgerMenu } from '../components/BurgerMenu';
 import { analyticsService } from '../services/analyticsService';
 
 interface DashboardScreenProps {
@@ -123,8 +125,42 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({ navigation }) 
         return { icon: 'alert-circle', color: '#F44336' };
     };
 
+    // Menu items configuration
+    const menuItems = [
+        {
+            id: 'profile',
+            label: 'Profile',
+            icon: 'account',
+            onPress: () => navigation.navigate('Profile'),
+        },
+        {
+            id: 'account',
+            label: 'Account',
+            icon: 'account-cog',
+            onPress: () => navigation.navigate('Account'),
+        },
+        {
+            id: 'medications',
+            label: 'Medications',
+            icon: 'pill',
+            onPress: () => navigation.navigate('Medications'),
+        },
+        {
+            id: 'settings',
+            label: 'Settings',
+            icon: 'cog',
+            onPress: () => navigation.navigate('Settings'),
+        },
+    ];
+
     return (
         <SafeAreaView style={dashboardStyles.container}>
+            {/* Header with Burger Menu */}
+            <View style={styles.header}>
+                <Text style={styles.headerTitle}>Dashboard</Text>
+                <BurgerMenu menuItems={menuItems} />
+            </View>
+
             <ScrollView
                 showsVerticalScrollIndicator={false}
                 refreshControl={
@@ -247,3 +283,20 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({ navigation }) 
         </SafeAreaView>
     );
 };
+
+const styles = StyleSheet.create({
+    header: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        paddingHorizontal: 16,
+        paddingVertical: 12,
+        borderBottomWidth: 1,
+        borderBottomColor: '#eee',
+    },
+    headerTitle: {
+        fontSize: 24,
+        fontWeight: '700',
+        color: '#333',
+    },
+});
